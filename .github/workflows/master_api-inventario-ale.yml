@@ -51,9 +51,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_DDFE430813544A568B017956900F170B }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_12F143A264D543329A3C2F54EF16D738 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_6E38585BD8F84E878F89CCED2558FA64 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_C7CE95DF595A4739BAB5BB1F270C4DEC }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_DF6CAED3685445BDBE19DCFF7A4482C2 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_324704F77DF947CAA0626896CA4D5FDF }}
           
       - name: Configurar cadena de conexión PostgreSQL
         run: |
