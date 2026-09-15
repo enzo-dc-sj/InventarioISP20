@@ -196,7 +196,7 @@ namespace Desktop.Views
             if (dataGridClientes.CurrentRow != null)
             {
                 var clienteARestaurar = (Cliente)dataGridClientes.CurrentRow.DataBoundItem;
-                //preguntamos si está seguro de eliminar el cliente
+                //preguntamos si está seguro de restaurar el cliente
                 var result = MessageBox.Show($"¿Está seguro de restaurar al cliente {clienteARestaurar.firstname} {clienteARestaurar.lastname}?", "Confirmar restauración", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
                 if (result == DialogResult.Yes)
                 {
