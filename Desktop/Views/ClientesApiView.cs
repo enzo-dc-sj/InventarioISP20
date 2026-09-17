@@ -1,4 +1,4 @@
-﻿using Desktop.Models;
+﻿using Services.Models;
 using Desktop.Services;
 using System;
 using System.Collections.Generic;
@@ -15,11 +15,25 @@ namespace Desktop.Views
     public partial class ClientesApiView : Form
     {
         ClientesApiService clientesService = new ClientesApiService();
+        LocalidadesApiService localidadesService = new LocalidadesApiService();
         Cliente clienteModificado;
         public ClientesApiView()
         {
             InitializeComponent();
             _ = LoadClientes();
+            _ = LoadComboLocalidades();
+        }
+
+        private async Task LoadComboLocalidades()
+        {
+            var localidades = await localidadesService.GetAllAsync();
+            if (localidades != null)
+            {
+                comboLocalidades.DataSource = localidades;
+                comboLocalidades.DisplayMember = "Name";
+                comboLocalidades.ValueMember = "Id";
+                comboLocalidades.SelectedValue = -1;
+            }
         }
 
         private async Task LoadClientes()
@@ -28,6 +42,10 @@ namespace Desktop.Views
             if (clientes != null)
             {
                 dataGridClientes.DataSource = clientes;
+                dataGridClientes.Columns["Id"].Visible = false;
+                dataGridClientes.Columns["Created_at"].Visible = false;
+                dataGridClientes.Columns["LocalidadId"].Visible = false;
+                dataGridClientes.Columns["IsDeleted"].Visible = false;
             }
         }
 
@@ -42,36 +60,37 @@ namespace Desktop.Views
 
         private async void btnGuardar_Click(object sender, EventArgs e)
         {
-            //Cliente cliente = new Cliente
-            //{
-            //    firstname = txtNombre.Text,
-            //    lastname = txtApellido.Text,
-            //    dni = txtDni.Text,
-            //    address = txtDireccion.Text,
-            //};
-            //bool clienteGuardado;
-            //if (clienteModificado == null)
-            //{
-            //    clienteGuardado = await clientesService.AddClienteAsync(cliente);
-            //}
-            //else
-            //{
-            //    cliente.id = clienteModificado.id;
-            //    cliente.created_at = clienteModificado.created_at;
-            //    clienteGuardado = await clientesService.UpdateClienteAsync(cliente);
-            //}
-            //if (clienteGuardado)
-            //{
-            //    MessageBox.Show("Cliente guardado correctamente");
-            //    LoadClientes();
-            //    ClearTextBox();
-            //    tabControl1.SelectedTab = tabPageLista;
-            //    clienteModificado = null;
-            //}
-            //else
-            //{
-            //    MessageBox.Show("Error al guardar el cliente");
-            //}
+            Cliente cliente = new Cliente
+            {
+                Firstname = txtNombre.Text,
+                Lastname = txtApellido.Text,
+                Dni = txtDni.Text,
+                Address = txtDireccion.Text,
+                LocalidadId = comboLocalidades.SelectedValue != null ? (int)comboLocalidades.SelectedValue : 0
+            };
+            bool clienteGuardado;
+            if (clienteModificado == null)
+            {
+                clienteGuardado = await clientesService.AddClienteAsync(cliente);
+            }
+            else
+            {
+                cliente.Id = clienteModificado.Id;
+                cliente.Created_at = clienteModificado.Created_at;
+                clienteGuardado = await clientesService.UpdateClienteAsync(cliente);
+            }
+            if (!clienteGuardado)
+            {
+                MessageBox.Show("Error al guardar el cliente");
+                return;
+            }
+
+            MessageBox.Show("Cliente guardado correctamente");
+            await LoadClientes();
+            ClearTextBox();
+            tabControl1.SelectedTab = tabPageLista;
+            clienteModificado = null;
+
 
 
         }
@@ -99,21 +118,24 @@ namespace Desktop.Views
         private void btnModificar_Click(object sender, EventArgs e)
         {
             //capturamos el cliente seleccionado en la grilla
-            if (dataGridClientes.CurrentRow != null)
-            {
-                clienteModificado = (Cliente)dataGridClientes.CurrentRow.DataBoundItem;
-                //llenamos los campos del formulario con los datos del cliente seleccionado
-                txtNombre.Text = clienteModificado.firstname;
-                txtApellido.Text = clienteModificado.lastname;
-                txtDni.Text = clienteModificado.dni;
-                txtDireccion.Text = clienteModificado.address;
-                //cambiamos a la pestaña de agregar/editar
-                tabControl1.SelectedTab = tabPageAgregarEditar;
-            }
-            else
+            if (dataGridClientes.CurrentRow == null)
             {
                 MessageBox.Show("Seleccione un cliente para modificar");
+                return;
             }
+            
+            clienteModificado = (Cliente)dataGridClientes.CurrentRow.DataBoundItem;
+            //llenamos los campos del formulario con los datos del cliente seleccionado
+            txtNombre.Text = clienteModificado.Firstname;
+            txtApellido.Text = clienteModificado.Lastname;
+            txtDni.Text = clienteModificado.Dni;
+            txtDireccion.Text = clienteModificado.Address;
+            if (clienteModificado.LocalidadId != 0) comboLocalidades.SelectedValue = clienteModificado.LocalidadId;
+            //cambiamos a la pestaña de agregar/editar
+            tabControl1.SelectedTab = tabPageAgregarEditar;
+
+
+
         }
 
         private void txtBusqueda_KeyPress(object sender, KeyPressEventArgs e)
@@ -129,30 +151,25 @@ namespace Desktop.Views
         private async void btnEliminar_Click(object sender, EventArgs e)
         {
             //capturamos el cliente seleccionado en la grilla
-            if (dataGridClientes.CurrentRow != null)
-            {
-                var clienteAEliminar = (Cliente)dataGridClientes.CurrentRow.DataBoundItem;
-                //preguntamos si está seguro de eliminar el cliente
-                var result = MessageBox.Show($"¿Está seguro de eliminar al cliente {clienteAEliminar.firstname} {clienteAEliminar.lastname}?", "Confirmar eliminación", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                if (result == DialogResult.Yes)
-                {
-                    //eliminamos el cliente
-                    var clienteEliminado = await clientesService.DeleteClienteAsync((int)clienteAEliminar.id!);
-                    if (clienteEliminado)
-                    {
-                        MessageBox.Show($"Cliente {clienteAEliminar.firstname} {clienteAEliminar.lastname} eliminado correctamente");
-                        LoadClientes();
-                    }
-                    else
-                    {
-                        MessageBox.Show("Error al eliminar el cliente");
-                    }
-                }
-            }
-
-            else
+            if (dataGridClientes.CurrentRow == null)
             {
                 MessageBox.Show("Seleccione un cliente para eliminar");
+                return;
+            }
+            var clienteAEliminar = (Cliente)dataGridClientes.CurrentRow.DataBoundItem;
+            //preguntamos si está seguro de eliminar el cliente
+            var result = MessageBox.Show($"¿Está seguro de eliminar al cliente {clienteAEliminar.Firstname} {clienteAEliminar.Lastname}?", "Confirmar eliminación", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (result == DialogResult.Yes)
+            {
+                //eliminamos el cliente
+                var clienteEliminado = await clientesService.DeleteClienteAsync((int)clienteAEliminar.Id!);
+                if (!clienteEliminado)
+                {
+                    MessageBox.Show("Error al eliminar el cliente");
+                    return;
+                }
+                MessageBox.Show($"Cliente {clienteAEliminar.Firstname} {clienteAEliminar.Lastname} eliminado correctamente");
+                await LoadClientes();
             }
         }
 
@@ -197,14 +214,14 @@ namespace Desktop.Views
             {
                 var clienteARestaurar = (Cliente)dataGridClientes.CurrentRow.DataBoundItem;
                 //preguntamos si está seguro de restaurar el cliente
-                var result = MessageBox.Show($"¿Está seguro de restaurar al cliente {clienteARestaurar.firstname} {clienteARestaurar.lastname}?", "Confirmar restauración", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                var result = MessageBox.Show($"¿Está seguro de restaurar al cliente {clienteARestaurar.Firstname} {clienteARestaurar.Lastname}?", "Confirmar restauración", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
                 if (result == DialogResult.Yes)
                 {
                     //Restauramos el cliente
-                    var clienteRestaurado = await clientesService.RestoreClienteAsync((int)clienteARestaurar.id!);
+                    var clienteRestaurado = await clientesService.RestoreClienteAsync((int)clienteARestaurar.Id!);
                     if (clienteRestaurado)
                     {
-                        MessageBox.Show($"Cliente {clienteARestaurar.firstname} {clienteARestaurar.lastname} restaurado correctamente");
+                        MessageBox.Show($"Cliente {clienteARestaurar.Firstname} {clienteARestaurar.Lastname} restaurado correctamente");
                         LoadDeleteds();
                     }
                     else
