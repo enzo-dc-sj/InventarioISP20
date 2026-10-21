@@ -14,6 +14,8 @@ namespace Desktop
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
             Application.Run(new IniciarSesionView());
+            //Application.Run(new SplashView());
+
         }
     }
 }

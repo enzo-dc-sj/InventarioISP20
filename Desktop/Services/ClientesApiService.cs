@@ -231,7 +231,7 @@ namespace Desktop.Services
         private HttpClient SettingHttpClient()
         {
             Env.Load("../../../");
-            var urlapi = Environment.GetEnvironmentVariable("URLAPILOCAL");
+            var urlapi = Environment.GetEnvironmentVariable("URLAPI");
             //instanciamos el httpClient y lo configuramos para poder utilizarlo en cada uno de los métodos
             var httpClient = new HttpClient();
             httpClient.BaseAddress = new Uri(urlapi+"clientes/");
